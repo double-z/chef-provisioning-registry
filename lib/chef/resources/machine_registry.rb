@@ -25,7 +25,8 @@ class MachineRegistry < Chef::Resource::Machine
   attribute :transport_options, :kind_of => Hash
 
   # Registry Path
-  attribute :registry_path
+  attribute :registry_path,
+    :kind_of => [String]
   
   def load_prior_resource
     Chef::Log.debug "Overloading #{self.resource_name} load_prior_resource with NOOP"

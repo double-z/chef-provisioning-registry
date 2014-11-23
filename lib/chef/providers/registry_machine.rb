@@ -30,10 +30,12 @@ class Chef
       end
 
       action :new_available do
-        ensure_directories
-        log_info "data_for_new_available #{data_for_new_available}"
-        registry_data = Chef::Provisioning::Registry::DataHandler::ForNewRegistryMachine.new(data_for_new_available)
-        file_action(:create, registry_data)
+        unless ::File.exists?(registry_machine_file_path)
+          ensure_directories
+          log_info "data_for_new_available #{data_for_new_available}"
+          registry_data = Chef::Provisioning::Registry::DataHandler::ForNewRegistryMachine.new(data_for_new_available)
+          file_action(:create, registry_data)
+        end
       end
 
       # action :allocate do
@@ -80,7 +82,7 @@ class Chef
         chef_server = Cheffish.default_chef_server
         log_info "file_hash New #{file_hash}"
         registry_spec = Chef::Provisioning::Registry::ChefRegistrySpec.new(file_hash, chef_server)
-        registry_spec.registry_machine_path = registry_machine_file_path(file_hash)
+        registry_spec.registry_machine_path = registry_machine_file_path
         # registry_spec.save(action_handler)          if (save_to_data_bag? && new_resource.save_to_file)
         # registry_spec.save_data_bag(action_handler) if (save_to_data_bag? && !new_resource.save_to_file)
         registry_spec.save_file(action_handler)   #  if (!save_to_data_bag? && new_resource.save_to_file)
@@ -190,12 +192,20 @@ class Chef
       #
       # Path to the File Entry On Disk
       #
-      def registry_machine_file_path(file_hash)
+      def registry_machine_file_path
         if @registry_machine_file_path
           return @registry_machine_file_path
         else
-          @registry_machine_file_path = ::File.join(new_resource.registry_path, "#{file_hash['id']}.json")
+          @registry_machine_file_path = ::File.join(registry_path, "#{value_for_file_name}.json")
           @registry_machine_file_path
+        end
+      end
+
+      def registry_path
+        if ENV['REGISTRY_APP_ROOT']
+          ::File.join(ENV['REGISTRY_APP_ROOT'], ".chef/provisioning/registry")
+        else
+          new_resource.registry_path
         end
       end
 
@@ -339,7 +349,7 @@ class Chef
       end
 
       def ensure_directories
-        use_registry_path = new_resource.registry_path
+        use_registry_path = registry_path
         Cheffish.inline_resource(self, :create) do
           directory use_registry_path do
             recursive true

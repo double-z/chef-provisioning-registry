@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'fileutils'
 require 'sinatra'
 require 'mixlib/shellout'
 require 'chef'
@@ -17,14 +18,16 @@ require 'chef/provisioning/registry/data_handler/for_api'
 require 'chef/provisioning/registry/chef_registry_spec'
 
 # APP_ROOT = File.expand_path('..', File.dirname(__FILE__)) unless defined? APP_ROOT
-APP_ROOT = '/home/js4/metal/chef-metal/docs'
+APP_ROOT = ENV['REGISTRY_APP_ROOT']
 configure do
   set :bind, '0.0.0.0'
 end
 
 post '/v1/registry' do
 
-  registry_path = ::File.expand_path("#{APP_ROOT}/examples/registry")
+  registry_path = ::File.expand_path("#{APP_ROOT}/.chef/provisioning/registry")
+  FileUtils.mkdir_p(registry_path)
+
   datafile = params[:data]
   payload = datafile[:tempfile].read
 
@@ -41,7 +44,7 @@ post '/v1/registry' do
 
   ##
   # Setup Config
-  config_file_path = ::File.expand_path("#{APP_ROOT}/examples/.chef/knife.rb")
+  config_file_path = ::File.expand_path("#{APP_ROOT}/.chef/knife.rb")
   chef_config = Chef::Config
   config_fetcher = Chef::ConfigFetcher.new(config_file_path)
   config_content = config_fetcher.read_config

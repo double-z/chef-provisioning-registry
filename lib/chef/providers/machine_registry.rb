@@ -56,6 +56,8 @@ class Chef
           raise "Driver not specified for machine #{machine_spec.name}"
         end
 
+        log_info "new_machine_options #{new_machine_options}"
+
         new_driver.allocate_machine(action_handler, machine_spec, new_machine_options)
         machine_spec.save(action_handler)
         registry_spec.save(action_handler) if existing_registry_data
@@ -200,6 +202,8 @@ class Chef
           configs << registry_spec.machine_options
         end
 
+        log_info "registry_spec.machine_options #{registry_spec.machine_options}"
+
         configs << new_resource.machine_options if new_resource.machine_options
         configs << driver.config[:machine_options] if driver.config[:machine_options]
         Cheffish::MergedConfig.new(*configs)
@@ -247,13 +251,17 @@ class Chef
             dhfs = DataHandler::ForSearch.new(new_resource)
             search_out = dhfs.search_hash
             ret_val = (search_out && search_out.is_a?(Hash) && !search_out.empty?) ? search_out : {}
-            ret_val 
+            ret_val
           end
         end
       end
 
       def registry_path
-        ::File.expand_path("~/metal/chef-metal/docs/examples/registry")
+        if ENV['REGISTRY_APP_ROOT']
+          ::File.join(ENV['REGISTRY_APP_ROOT'], ".chef/provisioning/registry")
+        else
+          new_resource.registry_path
+        end
       end
 
       def registry_machine_exists?
