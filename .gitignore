@@ -1,0 +1,13 @@
+docs/examples/.vagrant
+docs/examples/.chef/provisioning/ssh/*.json
+docs/examples/.chef/provisioning/registry/*.json
+docs/examples/nodes/*.json
+docs/examples/clients/*.json
+docs/examples/data_bags/registry/*.json
+docs/examples/.chef/local-mode-cache
+docs/work
+work
+pkg
+doc
+.yardoc
+#*.gem
