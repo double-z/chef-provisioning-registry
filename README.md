@@ -16,6 +16,19 @@ This is is very early development, but fully functional.
 
 A demo is included in `docs/examples`, usage of demo is explained below.
 
+The main thrust of usage is a new machine resource called `machine_registry` that searches the registry if told to and defaults to whatever driver is given - vagrant in the demo example - if no match is found. 
+
+It looks like this:
+
+		machine_registry "one" do
+		  action [:ready, :setup, :converge]
+		  converge true
+		  use_registry true
+		  registry_options 'machine_type' => 'rails_server', 'memory' => ['235', '256']
+		end
+
+note memory match is done via an array that will match a range like above, cause memory registers are not exact.
+
 more coming...
 
 Requirements
