@@ -29,6 +29,23 @@ It looks like this:
 
 note memory match is done via an array that will match a range like above, cause memory registers are not exact.
 
+the scripts used can be seen here:
+
+`http://bit.ly/notify_chef_provisioning_registry_api`
+
+and here:
+
+`http://bit.ly//metal_spec_sh_latest`
+
+api output json can be seen here:
+
+https://gist.github.com/double-z/abd332ff61875e1cbeff
+
+and the data bag created for a match can be seen here:
+
+https://gist.github.com/double-z/26f5e73c88c052c11a34
+
+
 more coming...
 
 Requirements
