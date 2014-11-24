@@ -51,6 +51,8 @@ more coming...
 Requirements
 ------------
 
+The Demo was tested on Ubuntu 12.04. should work wherever with minimal to no mods.
+
 For the demo, chefdk is necessary.
 
 Gems are in `docs/examples/gems` for now.
