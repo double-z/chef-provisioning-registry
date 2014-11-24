@@ -31,11 +31,11 @@ note memory match is done via an array that will match a range like above, cause
 
 the scripts used can be seen here:
 
-`http://bit.ly/notify_chef_provisioning_registry_api`
+http://bit.ly/notify_chef_provisioning_registry_api
 
 and here:
 
-`http://bit.ly//metal_spec_sh_latest`
+http://bit.ly//metal_spec_sh_latest
 
 api output json can be seen here:
 
