@@ -1,3 +1,4 @@
+docs/examples/.chef/vms
 docs/examples/.vagrant
 docs/examples/.chef/provisioning/ssh/*.json
 docs/examples/.chef/provisioning/registry/*.json

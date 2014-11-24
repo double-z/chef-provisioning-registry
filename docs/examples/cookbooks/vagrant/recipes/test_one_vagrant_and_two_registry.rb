@@ -4,7 +4,6 @@ require 'chef/provisioning/registry'
 registry_machine "192.168.33.22" do
   action :new_available
   #action :nothing
-  # registry_path ::File.expand_path("~/metal/chef-metal/docs/examples/registry") 
   machine_types ['rails_server']
   retrieve_specs true
   ssh_user "vagrant"

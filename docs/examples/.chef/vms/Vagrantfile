@@ -1,3 +1,0 @@
-Dir.glob('/home/js4/code/chef/provisioning/chef-provisioning-registry/docs/examples/.chef/vms/*.vm') do |vm_file|
-  eval(IO.read(vm_file), nil, vm_file)
-end
