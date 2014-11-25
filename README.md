@@ -73,7 +73,7 @@ the ssh to the api register machine `vagrant ssh register-with-api`
 then `sudo -s`
 setup the vm by running `/vagrant/setup_vagrant_vm.sh`
 
-after that you need to set up the hosts file. the API will listen 0.0.0.0 on your local machine, so add the following line to your hosts file
+after that you need to set up the hosts file. the API will listen 0.0.0.0 on your local machine, so add the following line to the vagrant box hosts file
 
 `$LOCAL_IP registry-api`
 
