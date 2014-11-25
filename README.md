@@ -83,7 +83,7 @@ the scripts will log to /tmp
 
 after that logout of the vagrant box and run `setup.sh` which will install the required gems using ChefDK
 
-then open another tab, and from the docs/examples directory run `start-api.sh` which will start the api in the foreground. When the machine registers you will see the json entry it will create outputted there.
+then open another tab, and from the docs/examples directory run `start_api.sh` which will start the api in the foreground. When the machine registers you will see the json entry it will create outputted there.
 
 once the api is started reload the vagrant box and it will register with API on boot.
 
