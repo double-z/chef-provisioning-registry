@@ -4,7 +4,8 @@ verify_api_cert false
 chef_server_url "http://127.0.0.1:8889"
 node_name       "stickywicket"
 client_key      File.join(File.dirname(__FILE__), "stickywicket.pem")
-cookbook_path   "#{chef_repo}/cookbooks"
+cookbook_path   ["#{chef_repo}/cookbooks", "#{chef_repo}/docker-cookbooks"]
+roles_path   ["#{chef_repo}/roles"]
 cache_type      "BasicFile"
 cache_options   :path => "#{chef_repo}/checksums"
 # This file exists mainly to ensure we don't pick up knife.rb from anywhere else
