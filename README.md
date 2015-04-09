@@ -66,32 +66,21 @@ To test it out, clone the repo:
 
 cd chef-provisioning-registry/docs/examples
 
+open another tab, and from the docs/examples directory run `start_api.sh` which will start the api in the foreground. When the machine registers you will see the json entry it will create outputted there.
+
+once the api is started bring up the vagrant boxes
+
 There is a Vagrantfile with two machines, one for registering with the `registry_machine` resource, the othere for api.
 
-run `vagrant up`
-the ssh to the api register machine `vagrant ssh register-via-api`
-then `sudo -s`
-setup the vm by running `/vagrant/setup_vagrant_vm.sh`
-
-after that you need to set up the hosts file. the API will listen 0.0.0.0 on your local machine, so add the following line to the vagrant box hosts file
-
-`$LOCAL_IP registry-api`
+`LOCAL_IP=your.ip.add.ress vagrant up`
 
 where LOCAL_IP is an ip that vagrant can talk to on your local machine.
 
 the scripts will log to /tmp
 
-after that logout of the vagrant box and run `setup.sh` which will install the required gems using ChefDK
-
-then open another tab, and from the docs/examples directory run `start_api.sh` which will start the api in the foreground. When the machine registers you will see the json entry it will create outputted there.
-
-once the api is started reload the vagrant box and it will register with API on boot.
-
-`vagrant reload register-with-api`
-
 once you see the entry hit  the api
 
-run `run_chef.sh` and three nodes will be converged, one using the vagrant_driver and two using the registry. the other registry entry is created via the `registry_machine` resource in the examples recipe.
+run `run_chef.sh` and two nodes will be converged, both using the registry. the other registry entry is created via the `registry_machine` resource in the examples recipe.
 
 License and Authors
 -------------------
