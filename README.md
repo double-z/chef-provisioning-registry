@@ -69,7 +69,7 @@ cd chef-provisioning-registry/docs/examples
 There is a Vagrantfile with two machines, one for registering with the `registry_machine` resource, the othere for api.
 
 run `vagrant up`
-the ssh to the api register machine `vagrant ssh register-with-api`
+the ssh to the api register machine `vagrant ssh register-via-api`
 then `sudo -s`
 setup the vm by running `/vagrant/setup_vagrant_vm.sh`
 
