@@ -51,7 +51,7 @@ more coming...
 Requirements
 ------------
 
-The Demo was tested on Ubuntu 12.04. should work wherever with minimal to no mods.
+The Demo was tested on Ubuntu 12.04 and OSX 10.10.1. should work wherever with minimal to no mods.
 
 For the demo, chefdk is necessary.
 
