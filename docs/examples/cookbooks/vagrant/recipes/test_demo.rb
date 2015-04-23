@@ -1,7 +1,8 @@
 require 'chef/provisioning/ssh_driver'
 require 'chef/provisioning/registry'
 
-registry_machine "192.168.33.22" do
+registry_machine "192.168.33.72" do
+  action :new_available
   machine_types ['app_server']
   retrieve_specs true
   ssh_user "vagrant"
@@ -26,10 +27,10 @@ end
 
 machine_registry "db" do
   use_registry true
-  registry_options 'machine_type' => 'db_server', 'memory' => ['235', '256']
+  registry_options 'machine_type' => 'db_server', 'memory' => ['990', '1024']
 end
 
 machine_registry "cache" do
   use_registry true
-  registry_options 'machine_type' => 'cache_server', 'memory' => ['235', '256']
+  registry_options 'machine_type' => 'cache_server', 'memory' => ['490', '512']
 end
