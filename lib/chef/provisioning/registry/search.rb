@@ -1,5 +1,7 @@
 require 'chef/provisioning/registry/helpers'
 require 'mac_address'
+require "net/http"
+require "uri"
 
 class Chef
   module Provisioning
@@ -13,7 +15,8 @@ class Chef
           log_info "Search registry_spec #{registry_spec}"
           @given_transport_options = @registry_spec['machine_options'][:transport_options] rescue {}
           @given_registry_options = @registry_spec['registry_options'] rescue {}
-          @given_machine_type = @given_registry_options['machine_types'] || @given_registry_options['machine_type'] rescue false
+          given_machine_type = @given_registry_options['machine_types'] || @given_registry_options['machine_type'] rescue false
+          @given_machine_types = given_machine_type ? Array(given_machine_type) : false
         end
 
         def given_registry_ip
@@ -47,10 +50,15 @@ class Chef
           @given_machine_type
         end
 
-        def search
+        def search(registry_source)
           return false_or_value(@matched_hash) if @matched_hash
-          @matched_hash = search_registry_options
-          @matched_hash
+          if registry_source == 'file'
+            @matched_hash = search_registry_file
+            @matched_hash
+          elsif registry_source == 'consul'
+            @matched_hash = search_registry_consul
+            @matched_hash
+          end
         end
 
         def false_or_value(v)
@@ -160,10 +168,29 @@ class Chef
           return valid_mac ? v_mac_address : valid_mac
         end
 
-        def search_registry_options
+        def registry_consul_hashes
+          h = {}
+          k = "http://localhost:8500/v1/kv/provisioning-registry/available?keys"
+          urik = URI.parse(k)
+          response2 = Net::HTTP.get_response(urik)
+          aa = JSON.parse(response2.body)
+
+          Array(aa).each do |a|
+            v = "http://localhost:8500/v1/kv/#{a}?raw"
+            uri = URI.parse(v)
+            response = Net::HTTP.get_response(uri)
+            av = JSON.parse(response.body)
+            h[a] = {}
+            h[a].merge!(av)
+          end
+          h
+        end
+
+        def search_registry_consul
           gots = false
-          if available_ip_file
-            gots = do_match(available_ip_file)
+          if available_ip_consul
+            available_file = JSON.parse(File.read(available_ip_file))
+            gots = do_match(available_file)
             log_info "available_ip_file match #{available_ip_file}" if gots.kind_of?(Hash)
           end
           if available_mac_file && !gots && !gots.kind_of?(Hash)
@@ -171,7 +198,8 @@ class Chef
             log_info "available_mac_file match #{available_mac_file}" if gots.kind_of?(Hash)
           end
           unless gots && gots.kind_of?(Hash)
-            registry_files.each do |available_file|
+            registry_files.each do |available_file_path|
+              available_file = JSON.parse(File.read(available_file_path))
               gots = do_match(available_file)
               log_info "available_file match #{available_file}" if gots.kind_of?(Hash)
               break if gots.kind_of?(Hash)
@@ -182,11 +210,35 @@ class Chef
           return rtv
         end
 
-        def do_match(available_file)
+        def search_registry_file
+          gots = false
+          if available_ip_file
+            available_file = JSON.parse(File.read(available_ip_file))
+            gots = do_match(available_file)
+            log_info "available_ip_file match #{available_ip_file}" if gots.kind_of?(Hash)
+          end
+          if available_mac_file && !gots && !gots.kind_of?(Hash)
+            gots = do_match(available_mac_file)
+            log_info "available_mac_file match #{available_mac_file}" if gots.kind_of?(Hash)
+          end
+          unless gots && gots.kind_of?(Hash)
+            registry_files.each do |available_file_path|
+              available_file = JSON.parse(File.read(available_file_path))
+              gots = do_match(available_file)
+              log_info "available_file match #{available_file}" if gots.kind_of?(Hash)
+              break if gots.kind_of?(Hash)
+            end
+          end
+          gots = false unless gots.kind_of?(Hash)
+          rtv = gots ? ::JSON.parse(gots.to_json) : false
+          return rtv
+        end
+
+        def do_match(available_hash)
           will_work      = false
           not_gonna_work = false
           machine_type   = false
-          r_m_h          = JSON.parse(File.read(available_file))
+          r_m_h          = JSON.parse(available_hash)
 
           # Loop Through Registered Machine Hash
           r_m_h.each_pair do |kk,vv|

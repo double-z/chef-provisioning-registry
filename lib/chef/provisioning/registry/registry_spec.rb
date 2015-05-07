@@ -130,6 +130,14 @@ class Chef
           registry_data['status'] = value
         end
 
+        def registry_source
+          registry_data['registry_source']
+        end
+
+        def registry_source=(value)
+          registry_data['registry_source'] = value
+        end
+
         def transport_options
           registry_data['machine_options'][:transport_options]
         end

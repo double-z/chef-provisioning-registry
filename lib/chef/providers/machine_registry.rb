@@ -33,13 +33,14 @@ class Chef
         if search_registry?
           log_info "search_registry = #{search_registry?}"
           match_machine = Chef::Provisioning::Registry::Search.new(search_params, registry_path)
-          existing_registry_data = match_machine.search
+          existing_registry_data = match_machine.search(new_resource.registry_source)
           if existing_registry_data
             matched_machine = stringify_keys(existing_registry_data.dup)
             log_info "Provider::action_allocate::search_match matched_machine = #{matched_machine}"
             registry_spec.machine_options   = machine_options_for(matched_machine)
             registry_spec.registry_options  = registry_options_for(matched_machine)
             registry_spec.location          = location_for(matched_machine)
+            registry_spec.registry_source   = new_resource.registry_source
             registry_spec.status            = 'allocated'
             log_info "Provider::action_allocate::search results in registry_spec = #{registry_spec.registry_data}"
           end
