@@ -1,0 +1,46 @@
+# #!/bin/bash
+#
+# Add this script to /etc/rc.local i.e:
+# /bin/bash /usr/local/bin/chef_provisioning_auto_register
+#
+
+API_URL='http://registry-api:4567/v1/register/api'
+TMP_FILE='/tmp/out.txt'
+MACHINE_TYPE=$1
+USER_NAME='provisioner'
+USER_HOME="/home/$USER_NAME"
+PASSWORD=
+
+touch $TMP_FILE
+cat /dev/null > $TMP_FILE
+
+useradd -d $USER_HOME -m -s /bin/bash $USER_NAME
+mkdir $USER_HOME/.ssh
+
+chown -R $USER_NAME.$USER_NAME $USER_HOME
+chmod 00666 $TMP_FILE
+
+echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+if [ ! -z $PASSWORD ]
+then
+  printf "$PASSWORD\n$PASSWORD" | passwd $USER_NAME
+fi
+
+su - $USER_NAME -c "cat /dev/zero | ssh-keygen -q -N '' -f $USER_HOME/.ssh/id_rsa"
+su - $USER_NAME -c "cat $USER_HOME/.ssh/id_rsa.pub >> $USER_HOME/.ssh/authorized_keys"
+
+wget http://bit.ly//metal_spec_sh_latest -q -O - | sudo bash | tee $TMP_FILE
+
+ID_RSA_DATA=`cat $USER_HOME/.ssh/id_rsa | grep -v 'PRIVATE KEY'`
+echo private_key====$ID_RSA_DATA >> $TMP_FILE
+
+if [ ! -z $PASSWORD ]
+then
+  echo ssh_pass====$PASSWORD >> $TMP_FILE
+fi
+
+echo machine_types====$MACHINE_TYPE >> $TMP_FILE
+echo ssh_user====$USER_NAME >> $TMP_FILE
+
+curl -v -F "data=@$TMP_FILE" $API_URL > /tmp/register.log

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+MACHINE_TYPE=$1
+USER_NAME='provisioner'
+USER_HOME="/home/$USER_NAME"
+
+if [ -d $USER_HOME ]
+then
+  echo "ALREADY REGISTERED"
+else
+  echo "REGISTERING..."
+  PASSWORD=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1`
+
+  useradd -d $USER_HOME -m -s /bin/bash $USER_NAME
+  chown -R $USER_NAME.$USER_NAME $USER_HOME
+
+  echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+  printf "$PASSWORD\n$PASSWORD" | passwd $USER_NAME
+
+  VAGRANT_DIR="/home/vagrant/"
+  if [ -d $VAGRANT_DIR ]
+  then
+    DEFAULT_GW_IFACE='eth1'
+  else
+    DEFAULT_GW_IFACE=`route -n | grep UG | awk '{print $8}'`
+  fi
+
+  DEFAULT_IFACE_IP=`ifconfig | grep -A 1 ^$DEFAULT_GW_IFACE | grep addr | awk -Faddr: '{print $2}' | awk '{print $1}' | grep -v '^$'`
+  DEFAULT_IFACE_SUBNET=`ifconfig | grep -A 1 ^$DEFAULT_GW_IFACE | grep addr | awk -FMask: '{print $2}' | awk '{print $1}' | grep -v '^$'`
+  DEFAULT_IFACE_BROADCAST=`ifconfig | grep -A 1 ^$DEFAULT_GW_IFACE | grep addr | awk -FBcast: '{print $2}' | awk '{print $1}' | grep -v '^$'`
+  DEFAULT_IFACE_MAC=`ifconfig | grep ^$DEFAULT_GW_IFACE | awk '{print $5}'`
+  TOTAL_CPU=`grep '^processor' /proc/cpuinfo | sort -u | wc -l`
+  MEMORY=`free -m | grep Mem` 
+  TOTAL_MEM=`echo $MEMORY | cut -f2 -d' '`
+  SWAP=`free -m | grep Swap` 
+  TOTAL_SWAP=`echo $SWAP | cut -f2 -d' '`
+  ARCH=`uname -p`
+  ROOT_DISK_SPACE=`df -lh | awk '{if ($6 == "/") { print $5 }}' | head -1 | cut -d'%' -f1`
+  NAME=`echo $DEFAULT_IFACE_IP | sed 's/\./-/g'`
+
+  nohup consul agent -data-dir /tmp/consul -node=$NAME -bind=$DEFAULT_IFACE_IP &
+  sleep 2
+  wget http://172.20.20.10:4567/v1/register/consul/$NAME
+  sleep 2
+
+  curl -X PUT http://localhost:8500/v1/kv/provisioning-registry/available/$NAME -d "{\"id\": \"$NAME\", \"ssh_user\": \"$USER_NAME\", \"machine_types\": [\"$MACHINE_TYPE\"], \"password\": \"$PASSWORD\", \"memory\": \"$TOTAL_MEM\", \"swap\": \"$TOTAL_SWAP\", \"cpu_count\": \"$TOTAL_CPU\", \"ip_address\": \"$DEFAULT_IFACE_IP\", \"subnet\": \"$DEFAULT_IFACE_SUBNET\", \"broadcast\": \"$DEFAULT_IFACE_BROADCAST\", \"mac_address\": \"$DEFAULT_IFACE_MAC\", \"root_disk_space\": \"$ROOT_DISK_SPACE\"}"
+
+  echo "REGISTRATION COMPLETE"
+fi

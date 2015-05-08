@@ -23,7 +23,7 @@ configure do
   set :bind, '0.0.0.0'
 end
 
-post '/v1/registry' do
+post '/v1/register/api' do
 
   registry_path = ::File.expand_path("#{APP_ROOT}/.chef/provisioning/registry")
   FileUtils.mkdir_p(registry_path)

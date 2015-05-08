@@ -3,7 +3,7 @@ require 'chef/provisioning/registry'
 
 registry_machine "192.168.33.72" do
  action :new_available
- machine_types ['rails_server']
+ machine_types ['app_server']
  retrieve_specs true
  ssh_user "vagrant"
  ssh_pass "vagrant"
