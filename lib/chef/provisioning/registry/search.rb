@@ -15,8 +15,8 @@ class Chef
           log_info "Search registry_spec #{registry_spec}"
           @given_transport_options = @registry_spec['machine_options'][:transport_options] rescue {}
           @given_registry_options = @registry_spec['registry_options'] rescue {}
-          given_machine_type = @given_registry_options['machine_types'] || @given_registry_options['machine_type'] rescue false
-          @given_machine_types = given_machine_type ? Array(given_machine_type) : false
+          given_machine_types = @given_registry_options['machine_types'] || @given_registry_options['machine_type'] rescue false
+          @given_machine_type = given_machine_types ? given_machine_types : false
         end
 
         def given_registry_ip
@@ -223,9 +223,9 @@ class Chef
           end
           unless gots && gots.kind_of?(Hash)
             registry_files.each do |available_file_path|
-              available_file = JSON.parse(File.read(available_file_path))
-              gots = do_match(available_file)
-              log_info "available_file match #{available_file}" if gots.kind_of?(Hash)
+	      available_file_hash = JSON.parse(File.read(available_file_path))
+              gots = do_match(available_file_hash, available_file_path)
+              log_info "available_file match #{available_file_hash}" if gots.kind_of?(Hash)
               break if gots.kind_of?(Hash)
             end
           end
@@ -234,45 +234,58 @@ class Chef
           return rtv
         end
 
-        def do_match(available_hash)
-          will_work      = false
+        def do_match(available_hash, available_file = false)
+              puts "AVAILABLE: #{available_hash.inspect}"
+          
+	  will_work      = false
           not_gonna_work = false
           machine_type   = false
-          r_m_h          = JSON.parse(available_hash)
+          r_m_h          = available_hash
 
           # Loop Through Registered Machine Hash
           r_m_h.each_pair do |kk,vv|
             next if not_gonna_work
-            log_info("KK = #{kk} and VV = #{vv}")
+            log_ts("KK = #{kk} and VV = #{vv}")
             if kk == "status"
               not_gonna_work = true if vv != "available"
             elsif kk == 'registry_options'
-              log_info("has registry_options: #{vv}")
+              log_ts("has registry_options: #{vv}")
               vv.each do |k,v|
+		log_ts "vv.each #{k} and #{v}"
                 if k == "machine_types"
-                  log_info("machine_types: k = #{k} v=#{v} desired machine type = #{@given_machine_type}")
+			log_ts("V is #{v} and k is #{k}")
+		  va = Array(v)
+		  error_message = "Machine Type Is An Array in Registry But Must Be Passed As A String"
+		  raise error_message unless @given_machine_type.kind_of?(String)
+		  if va.include?(@given_machine_type)
+			  log_ts("INCLUDES")
+		  else
+		    log_ts(va)
+		    log_ts @given_machine_type
+		  end
+                  log_ts("machine_types: k = #{k} v=#{va} desired machine type = #{@given_machine_type}")
                   if @given_machine_type && !@given_machine_type.empty? &&
-                      !v.empty? && v.include?(@given_machine_type)
-                    log_info("will_work array #{v} includes #{@given_machine_type}")
+                      !va.empty? && va.include?(@given_machine_type)
+                    log_ts("will_work array #{va} includes #{@given_machine_type}")
                     machine_type = {"machine_type" => @given_machine_type}
                     will_work = true
                   else
-                    log_info "arrnot_gonna_work k=#{k} v=#{v} sv=#{@given_machine_type}"
-                    not_gonna_work = true if (@given_machine_type || !v.empty?)
+                    log_ts "arrnot_gonna_work k=#{k} v=#{va} sv=#{@given_machine_type}"
+                    not_gonna_work = true if (@given_machine_type || !va.empty?)
                   end
                 elsif @given_registry_options.has_key?(k)
                   if k == "memory"
-                    log_info "memory k=#{k} v=#{v} @given_registry_options[k] #{@given_registry_options[k][0]} and #{@given_registry_options[k][1]}"
+                    log_ts "memory k=#{k} v=#{v} @given_registry_options[k] #{@given_registry_options[k][0]} and #{@given_registry_options[k][1]}"
                     # will_work = true
                     if (@given_registry_options[k][0]..@given_registry_options[k][1]).include?(v)
-                      log_info "INCLUDES Memory Range encompassing #{v}"
+                      log_ts "INCLUDES Memory Range encompassing #{v}"
                       will_work = true
                     else
                       log_info "DOES NOT INCLUDE Memory Range encompassing #{v}"
                       not_gonna_work = true
                     end
                   elsif v == @given_registry_options[k] && !v.empty?
-                    log_info("string will_work: #{v} == #{@given_registry_options[k]}")
+                    log_ts("string will_work: #{v} == #{@given_registry_options[k]}")
                     will_work = true
                   else
                     puts "str not_gonna_work k=#{k} v=#{v} sv=#{@given_registry_options[k]}"
@@ -290,7 +303,7 @@ class Chef
           # - or we got nothin and move on to the next loop
           #
           if (will_work == true) && (not_gonna_work == false)
-            log_info "matched file is #{available_file}"
+            log_ts "matched file is #{available_file}" if available_file
             ro_ip  = "false"
             ro_mac = "false"
             tr_ip  = "false"
@@ -320,16 +333,18 @@ class Chef
             r_m_h['registry_options']['ip_address'] = use_ip if use_ip
             r_m_h['machine_options']['transport_options']['ip_address'] = use_ip if use_ip
             r_m_h['machine_options']['transport_options']['host'] = use_ip if use_ip
+	    if available_file
             r_m_h['location']['matched_registry_file'] = available_file
             r_m_h['location']['matched_registry_file_id'] = matched_registry_file_id
             r_m_h['location']['matched_registry_file_at'] = Time.now
+	    end
 
-            log_info "r_m_h final is #{r_m_h}"
+            log_ts "r_m_h final is #{r_m_h}"
 
             if false_or_value(use_ip) || false_or_value(ro_mac)
               useip = false_or_value(use_ip)
               log_info "sanity_check_against_taken file: #{available_file} useip: #{useip} ro_mac: #{ro_mac}"
-              sanity_check_against_taken(available_file, useip, ro_mac)
+              sanity_check_against_taken_file(available_file, useip, ro_mac) if available_file
             end
 
             @registry_spec['registry_options'].delete('memory') if @registry_spec['registry_options']['memory']
@@ -338,7 +353,7 @@ class Chef
 
             return ::JSON.parse(rmh_merged.to_json)
           else
-            log_info "did not matched file #{available_file}"
+            log_ts "did not matched file #{available_hash}" 
             return "false"
           end
         end
@@ -367,7 +382,7 @@ class Chef
         end
 
 
-        def sanity_check_against_taken(matched_file, mip, mmac)
+        def sanity_check_against_taken_file(matched_file, mip, mmac)
           new_match_ip  = false_or_value(mip)
           new_match_mac = false_or_value(mmac)
 

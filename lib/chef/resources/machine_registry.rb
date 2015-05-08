@@ -21,6 +21,9 @@ class MachineRegistry < Chef::Resource::Machine
   # Registry Driver
   attribute :registry_driver,  :kind_of => String, :default => 'ssh'
 
+  # Registry Driver
+  attribute :registry_source,  :kind_of => String, :default => 'file'
+
   # Registry Options
   attribute :transport_options, :kind_of => Hash
 
