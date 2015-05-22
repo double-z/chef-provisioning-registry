@@ -109,6 +109,10 @@ class Chef
           vat
         end
 
+        def available_ip_consul
+          false
+        end
+
         def available_ip_file
           return false unless match_ip_address
           file = ::File.join(@cluster_path, "#{match_ip_address}.json")
@@ -168,21 +172,25 @@ class Chef
           return valid_mac ? v_mac_address : valid_mac
         end
 
-        def registry_consul_hashes
+        def registry_consul_entries
           h = {}
           k = "http://localhost:8500/v1/kv/provisioning-registry/available?keys"
           urik = URI.parse(k)
           response2 = Net::HTTP.get_response(urik)
           aa = JSON.parse(response2.body)
+          entries = Array(aa)
+          return entries
+        end
 
-          Array(aa).each do |a|
-            v = "http://localhost:8500/v1/kv/#{a}?raw"
-            uri = URI.parse(v)
-            response = Net::HTTP.get_response(uri)
-            av = JSON.parse(response.body)
-            h[a] = {}
-            h[a].merge!(av)
-          end
+        def registry_consul_hash(entry_name)
+          v = "http://localhost:8500/v1/kv/#{entry_name}?raw"
+          uri = URI.parse(v)
+          response = Net::HTTP.get_response(uri)
+          av = JSON.parse(response.body)
+          puts "AV=============> #{av}"
+          h = {}
+          h.merge!(av)
+          log_info "registry_options_has is #{h}"
           h
         end
 
@@ -198,10 +206,10 @@ class Chef
             log_info "available_mac_file match #{available_mac_file}" if gots.kind_of?(Hash)
           end
           unless gots && gots.kind_of?(Hash)
-            registry_files.each do |available_file_path|
-              available_file = JSON.parse(File.read(available_file_path))
-              gots = do_match(available_file)
-              log_info "available_file match #{available_file}" if gots.kind_of?(Hash)
+            registry_consul_entries.each do |entry_name|
+              entry_hash = registry_consul_hash(entry_name)
+              gots = do_match(entry_hash, 'consul', entry_name)
+              log_info "consul match #{entry_hash}" if gots.kind_of?(Hash)
               break if gots.kind_of?(Hash)
             end
           end
@@ -222,9 +230,10 @@ class Chef
             log_info "available_mac_file match #{available_mac_file}" if gots.kind_of?(Hash)
           end
           unless gots && gots.kind_of?(Hash)
+          	log_ts " #{registry_files}"
             registry_files.each do |available_file_path|
-	      available_file_hash = JSON.parse(File.read(available_file_path))
-              gots = do_match(available_file_hash, available_file_path)
+              available_file_hash = JSON.parse(File.read(available_file_path))
+              gots = do_match(available_file_hash, 'file', available_file_path)
               log_info "available_file match #{available_file_hash}" if gots.kind_of?(Hash)
               break if gots.kind_of?(Hash)
             end
@@ -234,10 +243,10 @@ class Chef
           return rtv
         end
 
-        def do_match(available_hash, available_file = false)
-              puts "AVAILABLE: #{available_hash.inspect}"
-          
-	  will_work      = false
+        def do_match(available_hash, registry_source, available_file = false)
+          puts "AVAILABLE: #{available_hash.inspect}"
+
+          will_work      = false
           not_gonna_work = false
           machine_type   = false
           r_m_h          = available_hash
@@ -249,20 +258,20 @@ class Chef
             if kk == "status"
               not_gonna_work = true if vv != "available"
             elsif kk == 'registry_options'
-              log_ts("has registry_options: #{vv}")
+              log_info("has registry_options: #{vv}")
               vv.each do |k,v|
-		log_ts "vv.each #{k} and #{v}"
+                log_ts "vv.each #{k} and #{v}"
                 if k == "machine_types"
-			log_ts("V is #{v} and k is #{k}")
-		  va = Array(v)
-		  error_message = "Machine Type Is An Array in Registry But Must Be Passed As A String"
-		  raise error_message unless @given_machine_type.kind_of?(String)
-		  if va.include?(@given_machine_type)
-			  log_ts("INCLUDES")
-		  else
-		    log_ts(va)
-		    log_ts @given_machine_type
-		  end
+                  log_ts("V is #{v} and k is #{k}")
+                  va = Array(v)
+                  error_message = "Machine Type Is An Array in Registry But Must Be Passed As A String"
+                  raise error_message unless @given_machine_type.kind_of?(String)
+                  if va.include?(@given_machine_type)
+                    log_ts("INCLUDES")
+                  else
+                    log_ts(va)
+                    log_ts @given_machine_type
+                  end
                   log_ts("machine_types: k = #{k} v=#{va} desired machine type = #{@given_machine_type}")
                   if @given_machine_type && !@given_machine_type.empty? &&
                       !va.empty? && va.include?(@given_machine_type)
@@ -333,11 +342,13 @@ class Chef
             r_m_h['registry_options']['ip_address'] = use_ip if use_ip
             r_m_h['machine_options']['transport_options']['ip_address'] = use_ip if use_ip
             r_m_h['machine_options']['transport_options']['host'] = use_ip if use_ip
-	    if available_file
-            r_m_h['location']['matched_registry_file'] = available_file
+            # if registry_source == 'file'
+              r_m_h['location']['matched_registry_file'] = available_file
+            # elsif registry_source == 'consul'
+            #   r_m_h['location']['matched_registry_file'] = 'consul'
+            # end
             r_m_h['location']['matched_registry_file_id'] = matched_registry_file_id
             r_m_h['location']['matched_registry_file_at'] = Time.now
-	    end
 
             log_ts "r_m_h final is #{r_m_h}"
 
@@ -350,10 +361,11 @@ class Chef
             @registry_spec['registry_options'].delete('memory') if @registry_spec['registry_options']['memory']
 
             rmh_merged = Chef::Mixin::DeepMerge.merge(@registry_spec, r_m_h)
+            log_ts "rmh_merged #{rmh_merged}"
 
             return ::JSON.parse(rmh_merged.to_json)
           else
-            log_ts "did not matched file #{available_hash}" 
+            log_ts "did not matched file #{available_hash}"
             return "false"
           end
         end

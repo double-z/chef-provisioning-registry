@@ -3,7 +3,8 @@ require 'chef/provider/chef_node'
 require 'chef/provider/machine'
 require 'openssl'
 require 'chef/provisioning/chef_provider_action_handler'
-require 'chef/provisioning/chef_machine_spec'
+require 'chef/provisioning/chef_managed_entry_store'
+#require 'chef/provisioning/chef_machine_spec'
 require 'chef/provisioning/registry/chef_registry_spec'
 require 'chef/provisioning/registry'
 require 'chef/provisioning/registry/helpers'
@@ -215,10 +216,15 @@ class Chef
         node_driver.load_current_resource
         json = node_driver.new_json
         json['normal']['chef_provisioning'] = node_driver.current_json['normal']['chef_provisioning']
-        @machine_spec = Chef::Provisioning::ChefMachineSpec.new(json, new_resource.chef_server)
+        # @machine_spec = Chef::Provisioning::ChefMachineSpec.new(json, new_resource.chef_server)
         @registry_spec = Chef::Provisioning::Registry::ChefRegistrySpec.get_or_empty(new_resource, new_resource.chef_server)
-      end
+    @machine_spec = chef_managed_entry_store.new_entry(:machine, new_resource.name, json)
+  end
 
+  def chef_managed_entry_store
+    @chef_managed_entry_store ||= Provisioning.chef_managed_entry_store(new_resource.chef_server)
+  end
+  
       def self.upload_files(action_handler, machine, files)
         if files
           files.each_pair do |remote_file, local|

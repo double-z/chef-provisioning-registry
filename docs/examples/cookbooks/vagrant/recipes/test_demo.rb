@@ -1,7 +1,7 @@
 require 'chef/provisioning/ssh_driver'
 require 'chef/provisioning/registry'
 
-registry_machine "192.168.33.72" do
+registry_machine "172.20.20.72" do
   action :new_available
   machine_types ['app_server']
   retrieve_specs true
@@ -11,7 +11,7 @@ end
 
 machine_registry "lb" do
   use_registry true
-  registry_options 'machine_type' => 'lb_server', 'memory' => ['235', '256']
+  registry_options 'machine_types' => 'lb_server', 'memory' => ['235', '256']
 end
 
 machine_registry "app01" do

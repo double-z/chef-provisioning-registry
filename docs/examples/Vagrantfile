@@ -1,5 +1,6 @@
+#  use_ip = '172.20.20.71'
 if ENV['FIRST_PROVISION']
-  use_ip = '192.168.33.71'
+  use_ip = "172.20.20.9"
   $script = <<SCRIPT
   apt-get update
   apt-get install curl -y
@@ -18,7 +19,8 @@ Vagrant.configure("2") do |c|
     ne.vm.box_url = "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
     ne.vm.hostname = "target.vagrantup.com"
     ne.vm.synced_folder "../../.", "/vagrant"
-    ne.vm.network(:private_network, {:ip=>"192.168.33.71"})
+    ne.vm.network(:private_network, {:ip=>"172.20.20.9"})
+    #ne.vm.network(:private_network, {:ip=>"172.20.20.71"})
     ne.vm.provider :virtualbox do |p|
       p.customize ["modifyvm", :id, "--memory", "1024"]
     end
@@ -28,7 +30,7 @@ Vagrant.configure("2") do |c|
     one.vm.box = "opscode-ubuntu-12.04"
     one.vm.hostname = "app-recipe.vagrantup.com"
     one.vm.synced_folder ".", "/vagrant", disabled: true
-    one.vm.network(:private_network, {:ip=>"192.168.33.72"})
+    one.vm.network(:private_network, {:ip=>"172.20.20.72"})
     one.vm.provider :virtualbox do |p|
       p.customize ["modifyvm", :id, "--memory", "256"]
     end
@@ -38,7 +40,7 @@ Vagrant.configure("2") do |c|
     two.vm.box = "opscode-ubuntu-12.04"
     two.vm.hostname = "lb.vagrantup.com"
     two.vm.synced_folder ".", "/vagrant"
-    two.vm.network(:private_network, {:ip=>"192.168.33.73"})
+    two.vm.network(:private_network, {:ip=>"172.20.20.73"})
     two.vm.provision "shell", inline: $script
     two.vm.provision "shell", inline: "/vagrant/register_with_api lb_server" unless ENV['FIRST_PROVISION']
     two.vm.provider :virtualbox do |p|
@@ -50,7 +52,7 @@ Vagrant.configure("2") do |c|
     three.vm.box = "opscode-ubuntu-12.04"
     three.vm.hostname = "app.vagrantup.com"
     three.vm.synced_folder ".", "/vagrant"
-    three.vm.network(:private_network, {:ip=>"192.168.33.74"})
+    three.vm.network(:private_network, {:ip=>"172.20.20.74"})
     three.vm.provision "shell", inline: $script
     three.vm.provision "shell", inline: "/vagrant/register_with_api app_server" unless ENV['FIRST_PROVISION']
     three.vm.provider :virtualbox do |p|
@@ -62,7 +64,7 @@ Vagrant.configure("2") do |c|
     four.vm.box = "opscode-ubuntu-12.04"
     four.vm.hostname = "db.vagrantup.com"
     four.vm.synced_folder ".", "/vagrant"
-    four.vm.network(:private_network, {:ip=>"192.168.33.75"})
+    four.vm.network(:private_network, {:ip=>"172.20.20.75"})
     four.vm.provision "shell", inline: $script
     four.vm.provision "shell", inline: "/vagrant/register_with_api db_server" unless ENV['FIRST_PROVISION']
     four.vm.provider :virtualbox do |p|
@@ -74,7 +76,7 @@ Vagrant.configure("2") do |c|
     five.vm.box = "opscode-ubuntu-12.04"
     five.vm.hostname = "cache.vagrantup.com"
     five.vm.synced_folder ".", "/vagrant"
-    five.vm.network(:private_network, {:ip=>"192.168.33.76"})
+    five.vm.network(:private_network, {:ip=>"172.20.20.76"})
     five.vm.provision "shell", inline: $script
     five.vm.provision "shell", inline: "/vagrant/register_with_api cache_server" unless ENV['FIRST_PROVISION']
     five.vm.provider :virtualbox do |p|

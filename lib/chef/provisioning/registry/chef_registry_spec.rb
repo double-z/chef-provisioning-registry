@@ -1,3 +1,4 @@
+require 'net/http'
 require 'chef_metal'
 require 'cheffish'
 require 'chef/provisioning/registry/helpers'
@@ -156,6 +157,57 @@ class Chef
           end
         end
 
+        def save_consul(data)
+          log_ts "DATA: #{data}"
+          log_ts "DATAID: #{data['id']}"
+
+          # v = "http://localhost:8500/v1/kv/#{entry_name}?raw"
+          # uri = URI.parse(v)
+          # response = Net::HTTP.get_response(uri)
+
+          # urlb = "localhost:8500"
+          urlb = "http://localhost:8500"
+          urin = "/v1/kv/provisioning-registry/allocated/#{data['id']}"
+          # urin = "/v1/kv/provisioning-registry/allocated/#{data['id']}"
+
+          jsonbody = data.to_json
+          uri = URI.parse("#{urlb}#{urin}")
+          http = Net::HTTP.new(uri.host, uri.port)
+
+          responsen = http.request_put(uri.request_uri, jsonbody)
+          log_ts "SAVE responsen #{responsen.inspect}"
+          if data['location'] &&
+              data['location']['matched_registry_file']
+            log_ts "MRF SAVE #{data['location']['matched_registry_file']}"
+
+
+            urld = "/v1/kv/provisioning-registry/available/#{data['location']['matched_registry_file_id']}"
+            urid = URI.parse("#{urlb}#{urld}")
+            httpd = Net::HTTP.new(urid.host, urid.port)
+            responsed = httpd.delete(urid.request_uri)
+          end
+
+          # def put(path, headers = {}, body = "")
+          #   uri = URI.parse("#{@base_url}#{path}")
+          #   http = Net::HTTP.new(uri.host, uri.port)
+          #   request = Net::HTTP::Put.new(uri.request_uri)
+          #   request.basic_auth @username, @password unless @username.nil?
+          #   headers.keys.each do |key|
+          #     request[key] = headers[key]
+          #   end
+          #   request.body = body
+          #   http.request(request)
+          # end
+
+          # def delete(path)
+          #   uri = URI.parse("#{@base_url}#{path}")
+          #   http = Net::HTTP.new(uri.host, uri.port)
+          #   request = Net::HTTP::Delete.new(uri.request_uri)
+          #   request.basic_auth @username, @password unless @username.nil?
+          #   http.request(request)
+          # end
+        end
+
         #
         # Save this node to the server.  If you have significant information that
         # could be lost, you should do this as quickly as possible.  Data will be
@@ -178,6 +230,7 @@ class Chef
             mark_matched_registry_file_taken(_self_registry_data['location']['matched_registry_file'])
           end
           unless values_same
+            #save_consul(_self_registry_data)
             save_data_bag(action_handler, true)
             save_file(action_handler, true)
           else
